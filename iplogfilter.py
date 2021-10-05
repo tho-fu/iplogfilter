@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-version = "0.1"
+version = "0.11"
 
 __author__ = "ThoFu"
 __copyright__ = "Copyright 2021, ThoFu"
@@ -17,7 +17,7 @@ import os
 import argparse
 
 ############# Config Variables #############
-srclist = ['192.168.1.0/24','10.10.10.0/24']
+iplist = ['192.168.1.0/24','10.10.10.0/24']
 ############# Config Variables #############
 
 class bcolors:
@@ -36,6 +36,22 @@ def checklogfile(logfilename):
     else:
         lfresult = False
     return lfresult
+
+def replaceresults(stringdata):
+    stringdata = str(stringdata)
+    replaces = {' ': '_',
+                ',': '',
+                '[\']': '\']',
+                '[\'[': '',
+                ']\']': '',
+                '[\'': '',
+                '\']': ''}
+
+    for key, value in replaces.items():
+    
+        stringdata = stringdata.replace(key, value)
+
+    return stringdata
 
 my_parser = argparse.ArgumentParser(
     description='Search for most wanted IP-Ranges in your logfiles',
@@ -65,15 +81,18 @@ if args.filetype and args.logfile:
 
             for line in fstring:
         
-                pattern = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})',line)
+                ippattern = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})',line)
                 time = re.findall(r'(\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\,{1})',line)
                 descr = re.findall(r'(\[{1}[\w\-]{5,}\]{1})',line)
 
-                if pattern is not None and 'Found ' in line:
-                    for match in pattern:
-                        for val in srclist:
+                if ippattern is not None and 'Found ' in line:
+                    for match in ippattern:
+                        for val in iplist:
                             if ipaddress.ip_address(match) in ipaddress.ip_network(val):
-                                result = str(descr) + " - " + str(time).replace(",","") + " - " + str(pattern)
+                                ippattern = replaceresults(ippattern)
+                                time = replaceresults(time)
+                                descr = replaceresults(descr)
+                                result = [descr, time, ippattern]
                                 lst.append(result)
 
             if not lst:
@@ -81,7 +100,10 @@ if args.filetype and args.logfile:
             else:
                 lst.sort(reverse=False)
                 print("\n" + bcolors.OKGREEN + bcolors.UNDERLINE + "Result:" + bcolors.ENDC + "\n")
-                print(lst)
+                print ("{:<30} {:<30} {:<25}".format('Description','Time','IP'))
+                for v in lst:
+                    ipdescr, iptime, ipip = v
+                    print ("{:<30} {:<30} {:<25}".format( ipdescr, iptime, ipip))
                 print("\n")
 
         elif args.filetype == 2:
@@ -93,15 +115,18 @@ if args.filetype and args.logfile:
 
             for line in fstring:
         
-                pattern = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})',line)
+                ippattern = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})',line)
                 time = re.findall(r'([a-zA-Z]{3} \d{2} \d{2}\:\d{2}\:\d{2})',line)
                 descr = re.findall(r'([\w\-]{3,}\[{1})',line)
 
-                if pattern is not None and ('Accepted ' or 'Failed ') in line:
-                    for match in pattern:
-                        for val in srclist:
+                if ippattern is not None and ('Accepted ' or 'Failed ') in line:
+                    for match in ippattern:
+                        for val in iplist:
                             if ipaddress.ip_address(match) in ipaddress.ip_network(val):
-                                result = str(descr).replace("[']","']") + " - " + str(time) + " - " + str(pattern)
+                                ippattern = replaceresults(ippattern)
+                                time = replaceresults(time)
+                                descr = replaceresults(descr)
+                                result = [descr, time, ippattern]
                                 lst.append(result)
 
             if not lst:
@@ -109,7 +134,10 @@ if args.filetype and args.logfile:
             else:
                 lst.sort(reverse=False)
                 print("\n" + bcolors.OKGREEN + bcolors.UNDERLINE + "Result:" + bcolors.ENDC + "\n")
-                print(lst)
+                print ("{:<30} {:<30} {:<25}".format('Description','Time','IP'))
+                for v in lst:
+                    ipdescr, iptime, ipip = v
+                    print ("{:<30} {:<30} {:<25}".format( ipdescr, iptime, ipip))
                 print("\n")
 
         else:
