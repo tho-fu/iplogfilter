@@ -37,22 +37,6 @@ def checklogfile(logfilename):
         lfresult = False
     return lfresult
 
-def replaceresults(stringdata):
-    stringdata = str(stringdata)
-    replaces = {' ': '_',
-                ',': '',
-                '[\']': '\']',
-                '[\'[': '',
-                ']\']': '',
-                '[\'': '',
-                '\']': ''}
-
-    for key, value in replaces.items():
-    
-        stringdata = stringdata.replace(key, value)
-
-    return stringdata
-
 my_parser = argparse.ArgumentParser(
     description='Search for most wanted IP-Ranges in your logfiles',
     add_help=True,
