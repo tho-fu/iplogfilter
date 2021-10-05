@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-version = "0.11"
+version = "0.12"
 
 __author__ = "ThoFu"
 __copyright__ = "Copyright 2021, ThoFu"
@@ -89,10 +89,7 @@ if args.filetype and args.logfile:
                     for match in ippattern:
                         for val in iplist:
                             if ipaddress.ip_address(match) in ipaddress.ip_network(val):
-                                ippattern = replaceresults(ippattern)
-                                time = replaceresults(time)
-                                descr = replaceresults(descr)
-                                result = [descr, time, ippattern]
+                                result = [descr[0], (time[0]).rstrip((time[0])[-1]), ippattern[0]]
                                 lst.append(result)
 
             if not lst:
@@ -123,10 +120,7 @@ if args.filetype and args.logfile:
                     for match in ippattern:
                         for val in iplist:
                             if ipaddress.ip_address(match) in ipaddress.ip_network(val):
-                                ippattern = replaceresults(ippattern)
-                                time = replaceresults(time)
-                                descr = replaceresults(descr)
-                                result = [descr, time, ippattern]
+                                result = [(descr[0]).rstrip((descr[0])[-1]), time[0], ippattern[0]]
                                 lst.append(result)
 
             if not lst:
