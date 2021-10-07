@@ -8,7 +8,7 @@ That's it. :-)
 
 The initial release works only for fail2ban.log and auth.log.
 
--
+---
 
 usage: iplogfilter.py [-h] [-v] -t  logfile
 
