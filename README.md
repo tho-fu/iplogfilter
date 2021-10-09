@@ -12,7 +12,7 @@ Works for fail2ban.log, auth.log and OPNSense logfiles.
 <pre>
 usage: iplogfilter.py [-h] [-v] -t  logfile
 
-Search for most wanted IP-Ranges in your logfiles
+Search for interesting IP-Ranges within your logfiles
 
 positional arguments:
   logfile           logfile name and path
