@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-version = "0.13"
+version = "0.14"
 
 __author__ = "ThoFu"
 __copyright__ = "Copyright 2021, ThoFu"
@@ -51,7 +51,7 @@ def removeflif(dataif):
     return dataif
 
 my_parser = argparse.ArgumentParser(
-    description='Search for most wanted IP-Ranges in your logfiles',
+    description='Search for interesting IP-Ranges within your logfiles',
     add_help=True,
     formatter_class=argparse.RawTextHelpFormatter,
     epilog="Example of usage: " + sys.argv[0] + " -t 1 logfile\n ",)
@@ -77,17 +77,21 @@ if args.filetype and args.logfile:
             fh.close()
 
             for line in fstring:
-        
-                ippattern = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})',line)
-                time = re.findall(r'(\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\,{1})',line)
-                descr = re.findall(r'(\[{1}[\w\-]{5,}\]{1})',line)
 
-                if ippattern is not None and 'Found ' in line:
-                    for match in ippattern:
-                        for val in iplist:
-                            if ipaddress.ip_address(match) in ipaddress.ip_network(val):
-                                result = [descr[0], (time[0]).rstrip((time[0])[-1]), ippattern[0]]
-                                lst.append(result)
+                linecheck = re.match(r'(\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\,\d{1,} (?:fail2ban.filter)[ ]{1,9}\[\d{1,}\]: (?:INFO).*\[[\w-]{1,}\] (?:Found) \d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})',line)
+        
+                if linecheck is not None:
+
+                    linedata = (linecheck.group()).split(",")
+
+                    ippattern = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|$)',linedata[1])[0]
+                    time = linedata[0]
+                    descr = re.findall(r'(\[{1}[\w\-]{5,}\]{1}|$)',linedata[1])[0]
+
+                    for val in iplist:
+                        if ipaddress.ip_address(ippattern) in ipaddress.ip_network(val):
+                            result = [descr, time, ippattern]
+                            lst.append(result)
 
             if not lst:
                 print("No result")
@@ -113,7 +117,7 @@ if args.filetype and args.logfile:
                 time = re.findall(r'([a-zA-Z]{3} \d{2} \d{2}\:\d{2}\:\d{2})',line)
                 descr = re.findall(r'([\w\-]{3,}\[{1})',line)
 
-                if ippattern is not None and ('Accepted ' or 'Failed ') in line:
+                if ippattern and time and descr is not None and ('Accepted ' or 'Failed ') in line:
                     for match in ippattern:
                         for val in iplist:
                             if ipaddress.ip_address(match) in ipaddress.ip_network(val):
@@ -139,42 +143,49 @@ if args.filetype and args.logfile:
             fh.close()
 
             for line in fstring:
-        
-                ipsrcpattern = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|$)',line)[0]
-                ipdstpattern = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|$)',line)[1]
-                inorout = re.findall(r'(,in,|,out,)',line)
-                passorblock = re.findall(r'(,pass,|,block,)',line)
-                interface = re.findall(r'(,igb.*,match|$])',line)
-                time = re.findall(r'(\d{4}\-\d{2}\-\d{2}T\d{2}\:\d{2}\:\d{2})',line)
-                descr = re.findall(r'([\w\-]{3,}\[{1})',line)
-                getports = re.findall(r'((?:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\,){2}\d{1,5}\,\d{1,5}|$)',line)[0]
 
-                try:
-                    getallports = getports.split(",")
-                    srcport = getallports[2]
-                    dstport = getallports[3]
-                except:
-                    print(bcolors.FAIL + "Wrong type of Logfile ?!" + bcolors.ENDC)
+                linecheck = re.match(r'(\d{4}\-\d{2}\-\d{2}T\d{2}\:\d{2}\:\d{2} [\w\-]{3,}\[.*\] \d{1,3},.*,\w{1,32},.*,(?:match),(?:pass|block|reject),(?:in|out),\d{1},.*,\d{1,},\w{1,5},\d{1,},(?:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\,){2}(?:(?:\d{1,5}\,\d{1,5})|(?:datalength)))',line)
+                
+                if linecheck is not None:
+                    
+                    linedata = (linecheck.group()).split(",")
+                    linetimedescr = linedata[0].split()
 
-                if ipsrcpattern and ipdstpattern and inorout and passorblock and interface and time and descr and srcport and dstport is not None:
+                    time = linetimedescr[0]
+                    descr = re.findall(r'([\w\-]{3,}|$)',linetimedescr[1])[0]
+                    ipsrcpattern = linedata[18]
+                    ipdstpattern = linedata[19]
+                    inorout = linedata[7]
+                    passorblock = linedata[6]
+                    interface = linedata[4]
+                    proto = linedata[16]
+
+                    if linedata[20] == 'datalength':
+                        srcport = '-'
+                        dstport = '-'
+
+                    else:
+                        srcport = linedata[20]
+                        dstport = linedata[21]
+
                     for val in iplist:
 
                         if ipaddress.ip_address(ipsrcpattern) in ipaddress.ip_network(val):
-                            result = [(descr[0]).rstrip((descr[0])[-1]), time[0], ipsrcpattern, ipdstpattern, removefl(inorout[0]), srcport, dstport, 
-                                    removefl(passorblock[0]), removeflif(interface[0])]
+                            result = [descr, time, ipsrcpattern, ipdstpattern, inorout, srcport, dstport, passorblock, interface, proto]
                             lst.append(result)
 
             if not lst:
                 print("No result")
+
             else:
                 lst.sort(reverse=False)
                 print("\n" + bcolors.OKGREEN + bcolors.UNDERLINE + "Result:" + bcolors.ENDC + "\n")
-                print ("{:<15} {:<24} {:<20} {:<20} {:<10} {:<14} {:<14} {:<10} {:<18}".format('Description','Time','SourceIP','DestIP','Direction',
-                    'SourcePort','DestPort','Action','Interface'))
+                print ("{:<15} {:<24} {:<20} {:<20} {:<10} {:<14} {:<14} {:<10} {:<18} {:<10}".format('Description','Time','SourceIP','DestIP','Direction',
+                    'SourcePort','DestPort','Action','Interface','Proto'))
                 for v in lst:
-                    ipdescr, iptime, ipsrcip, ipdstip, ipinorout, ipsrcport, ipdstport, ippassorblock, ipinterface = v
-                    print ("{:<15} {:<24} {:<20} {:<20} {:<10} {:<14} {:<14} {:<10} {:<18}".format( ipdescr, iptime, ipsrcip, ipdstip, ipinorout, 
-                        ipsrcport, ipdstport, ippassorblock, ipinterface))
+                    ipdescr, iptime, ipsrcip, ipdstip, ipinorout, ipsrcport, ipdstport, ippassorblock, ipinterface, ipproto = v
+                    print ("{:<15} {:<24} {:<20} {:<20} {:<10} {:<14} {:<14} {:<10} {:<18} {:<10}".format( ipdescr, iptime, ipsrcip, ipdstip, ipinorout, 
+                        ipsrcport, ipdstport, ippassorblock, ipinterface, ipproto))
                 print("\n")
 
         else:
