@@ -38,18 +38,6 @@ def checklogfile(logfilename):
         lfresult = False
     return lfresult
 
-def removefl(data):
-    data = data.rstrip(data[-1])
-    data = data.lstrip(",")
-
-    return data
-
-def removeflif(dataif):
-    dataif = dataif.rstrip(",match")
-    dataif = dataif.lstrip(",")
-
-    return dataif
-
 my_parser = argparse.ArgumentParser(
     description='Search for interesting IP-Ranges within your logfiles',
     add_help=True,
