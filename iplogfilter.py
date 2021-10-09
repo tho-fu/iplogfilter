@@ -38,6 +38,12 @@ def checklogfile(logfilename):
         lfresult = False
     return lfresult
 
+def withopen(file):
+    with open(args.logfile) as fh:
+        fstring = fh.readlines()
+    fh.close()
+    return fstring
+
 my_parser = argparse.ArgumentParser(
     description='Search for interesting IP-Ranges within your logfiles',
     add_help=True,
@@ -59,10 +65,7 @@ if args.filetype and args.logfile:
 
         if args.filetype == 1:
 
-            with open(args.logfile) as fh:
-                fstring = fh.readlines()
-
-            fh.close()
+            fstring = withopen(args.logfile)
 
             for line in fstring:
 
@@ -94,10 +97,7 @@ if args.filetype and args.logfile:
 
         elif args.filetype == 2:
         
-            with open(args.logfile) as fh:
-                fstring = fh.readlines()
-
-            fh.close()
+            fstring = withopen(args.logfile)
 
             for line in fstring:
         
@@ -124,11 +124,8 @@ if args.filetype and args.logfile:
                 print("\n")
 
         elif args.filetype == 3:
-        
-            with open(args.logfile) as fh:
-                fstring = fh.readlines()
 
-            fh.close()
+            fstring = withopen(args.logfile)
 
             for line in fstring:
 
