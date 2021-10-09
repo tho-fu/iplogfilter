@@ -6,7 +6,7 @@ Search for ip-ranges within your logfiles
 
 That's it. :-)
 
-The initial release works only for fail2ban.log and auth.log.
+Works for fail2ban.log, auth.log and OPNSense logfiles.
 
 ---
 
@@ -20,6 +20,6 @@ positional arguments:
 optional arguments:
   -h, --help        show this help message and exit
   -v, --version     show program's version number and exit
-  -t , --filetype   input filetype - 1 = Fail2Ban - 2 = AuthLog
+  -t , --filetype   input filetype - 1 = Fail2Ban - 2 = AuthLog - 3 = OPNSense
 
 Example of usage: iplogfilter/iplogfilter.py -t 1 logfile
