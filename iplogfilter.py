@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-version = "0.14"
+version = "0.15"
 
 __author__ = "ThoFu"
 __copyright__ = "Copyright 2021, ThoFu"
@@ -51,7 +51,7 @@ my_parser = argparse.ArgumentParser(
     epilog="Example of usage: " + sys.argv[0] + " -t 1 logfile\n ",)
 
 my_parser.add_argument('-v', '--version', action='version', version='%(prog)s {version}'.format(version=__version__))
-my_parser.add_argument('-t', '--filetype', type=int, metavar='', required=True, help='input filetype - 1 = Fail2Ban - 2 = AuthLog - 3 = OPNSense')
+my_parser.add_argument('-t', '--filetype', type=int, metavar='', required=True, help='input filetype - 1 = Fail2Ban - 2 = AuthLog - 3 = OPNSense - 4 = IPTables')
 
 my_parser.add_argument('logfile', type=str, help='logfile name and path')
 
@@ -171,6 +171,55 @@ if args.filetype and args.logfile:
                     ipdescr, iptime, ipsrcip, ipdstip, ipinorout, ipsrcport, ipdstport, ippassorblock, ipinterface, ipproto = v
                     print ("{:<15} {:<24} {:<20} {:<20} {:<10} {:<14} {:<14} {:<10} {:<18} {:<10}".format( ipdescr, iptime, ipsrcip, ipdstip, ipinorout, 
                         ipsrcport, ipdstport, ippassorblock, ipinterface, ipproto))
+                print("\n")
+
+        elif args.filetype == 4:
+
+            fstring = withopen(args.logfile)
+
+            for line in fstring:
+
+                linecheck = re.match(r'(\w{3} \d{2} (?:\d{2}:){2}\d{2}.*:.*\][\w -]{1,}: (?:IN=).*(?:OUT=).*(?:SRC=)(?:\d{1,3}.){3}\d{1,3} (?:DST=)(?:\d{1,3}.){3}\d{1,3}.*(?:PROTO=)\w{1,5} (?:SPT=)\d{1,5} (?:DPT=)\d{1,5})',line)
+                
+                if linecheck is not None:
+                    
+                    linedata = linecheck.group()
+
+                    time = re.findall(r'(\w{3} \d{2} (?:\d{2}:){2}\d{2}|$)',linedata)[0]
+                    descr = ((re.findall(r'(\][\w -]{1,}:|$)',linedata)[0]).rstrip(":")).lstrip("] ")
+                    ipsrcpattern = (re.findall(r'((?:SRC=)(?:\d{1,3}.){3}\d{1,3})',linedata)[0]).lstrip("SRC=")
+                    ipdstpattern = (re.findall(r'((?:DST=)(?:\d{1,3}.){3}\d{1,3})',linedata)[0]).lstrip("DST=")
+                    datain = ((re.findall(r'((?:IN=).*(?:OUT)|$)',linedata)[0]).rstrip(" OUT")).lstrip("IN=")
+                    if datain == " " or datain == "":
+                        datain = "-"
+                    dataout = ((re.findall(r'((?:OUT=).*(?:MAC)|$)',linedata)[0]).rstrip(" MAC")).lstrip("OUT=")
+                    if dataout == " " or dataout == "":
+                        dataout = "-"
+                    proto = ((re.findall(r'((?:PROTO=)\w{1,5})',linedata)[0]).lstrip("PROTO")).lstrip("=")
+                    srcport = (re.findall(r'((?:SPT=)\d{1,5})',linedata)[0]).lstrip("SPT=")
+                    dstport = (re.findall(r'((?:DPT=)\d{1,5})',linedata)[0]).lstrip("DPT=")
+
+                    for val in iplist:
+
+                        if ipaddress.ip_address(ipsrcpattern)in ipaddress.ip_network(val):
+                            result = [descr, time, ipsrcpattern, ipdstpattern, datain, dataout, srcport, dstport, proto]
+                            lst.append(result)
+                        if ipaddress.ip_address(ipdstpattern) in ipaddress.ip_network(val):
+                            result = [descr, time, ipsrcpattern, ipdstpattern, datain, dataout, srcport, dstport, proto]
+                            lst.append(result)
+
+            if not lst:
+                print("No result")
+
+            else:
+                lst.sort(reverse=False)
+                print("\n" + bcolors.OKGREEN + bcolors.UNDERLINE + "Result:" + bcolors.ENDC + "\n")
+                print ("{:<20} {:<20} {:<20} {:<20} {:<10} {:<10} {:<14} {:<14} {:<10}".format('Description','Time','SourceIP','DestIP','IN',
+                    'Out','SourcePort','DestPort','Proto'))
+                for v in lst:
+                    ipdescr, iptime, ipsrcip, ipdstip, ipin, ipout, ipsrcport, ipdstport, ipproto = v
+                    print ("{:<20} {:<20} {:<20} {:<20} {:<10} {:<10} {:<14} {:<14} {:<10}".format( ipdescr, iptime, ipsrcip, ipdstip, ipin, 
+                        ipout, ipsrcport, ipdstport, ipproto))
                 print("\n")
 
         else:
