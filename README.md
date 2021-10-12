@@ -2,7 +2,8 @@
 Search for ip-ranges within your logfiles
 
 1. Edit the Config Variables for your own IP-Ranges to search for.
-2. Start the script
+2. Configure your mailsettings, if you want to use this function
+3. Start the script
 
 That's it. :-)
 
