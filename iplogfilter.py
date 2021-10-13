@@ -26,9 +26,6 @@ if mailconfig == "1":
     cmailsubject = 'Logfileanalysis'
     cmailfrom = 'sender@example.com'
     ########## Mail Config Variables ##########
-else:
-    print ("No smtp-server given")
-    raise SystemExit()
 
 import re
 import sys
